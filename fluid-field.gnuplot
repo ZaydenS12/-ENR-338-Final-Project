@@ -1,0 +1,19 @@
+set term gif animate delay 10 size 800,600
+set output "fluid-field.gif"
+set xlabel "x (m)"
+set ylabel "y (m)"
+set xrange [0:2]
+set yrange [0:2]
+set size square
+set key off
+
+Time = 0.1
+SKIP = 1
+NT = 100
+dt = Time/NT
+
+do for [k=0:NT/SKIP] {
+	t = SKIP*(k+1)*dt
+	plot "fluid-field.dat" index k u 1:2:3:4 every 2:2 w vectors head filled
+  set title sprintf("2D Navier-Stokes, nu = 0.3, t = %.3f s",t)
+}
