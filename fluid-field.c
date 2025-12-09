@@ -3,12 +3,13 @@
 #include <math.h>
 
 // --- Simulation Parameters ---
-#define NX 41    // Grid points in X
-#define NY 41    // Grid points in Y
+#define NX 164     // Grid points in X
+#define NY 82    // Grid points in Y
 #define NIT 50   // Pressure iterations per time step
-#define NT 100   // Total time steps
+#define NT 120   // Total time steps
 #define T 0.1    // Actual time in seconds
 #define SKIP 1   // How often to write data
+#define VI 0.5 // The starting speed of the pipe
 
 // --- Physics Parameters ---
 // Reynolds Number Re = (U*L)/nu. 
@@ -22,8 +23,8 @@
 //
 // Keep Re low for this simple solver code stability.
 
-double lx = 2.0; // physical length in X direction
-double ly = 2.0; // physical length in Y direction
+double lx = 8.0; // physical length in X direction
+double ly = 4.0; // physical length in Y direction
 double rho = 1.0;
 double nu = 0.3; // extremely viscous 
 double dt = 1.0*T/NT;
@@ -40,8 +41,8 @@ int main() {
   // Initialize arrays to zero
   for(int j=0; j<NY; j++) {
     for(int i=0; i<NX; i++) {
-      u[j][i] = 0.0; v[j][i] = 0.0; p[j][i] = 0.0;
-      un[j][i] = 0.0; vn[j][i] = 0.0; pn[j][i] = 0.0;
+      u[j][i] = VI; v[j][i] = 0.0; p[j][i] = 0.0;
+      un[j][i] = 0; vn[j][i] = 0.0; pn[j][i] = 0.0;
       b[j][i] = 0.0;
     }
   }
@@ -125,16 +126,34 @@ int main() {
 
     // 4. Velocity Boundary Conditions
     // Stationary Walls
-    for (int j=0; j < NY; j++) {
-      u[j][0] = 0; u[j][NX-1] = 0;
-      v[j][0] = 0; v[j][NX-1] = 0;
+    
+			for (int j=0; j < NY; j++) {
+      u[j][0] = VI; u[j][NX+1] = 0;//left wall ; right wall (x velocity) 
+      v[j][0] = 0; v[j][NX+1] = 0;//left wall : right wall (y velocity)
     }
     for (int i=0; i < NX; i++) {
-      u[0][i] = 0; v[0][i] = 0;
-      // LID DRIVEN TOP WALL: Moves at speed 1.0
-      u[NY-1][i] = 1.0; 
-      v[NY-1][i] = 0;
+      u[0][i] = 0; v[0][i] = 0; //bottom x velocity; bottom y velocity 
+      u[NX][i] = 0; v[NX][i] = 0; //bottom x velocity; bottom y velocity 
+		 //^ check this, may not be right
+
+      u[NY-1][i] = VI;//top wall x velocity  
+      v[NY-1][i] = 0; //top wall y velocity 
+
+      u[0][i] = VI;//top wall x velocity  
+      v[0][i] = 0; //top wall y velocity 
     }
+		// blocker	
+		// k is the horizontal component, i is the vertical
+
+		for(int i=0; i<20; i++){
+			int c = 40; //offset
+			u[c+i][c+i] = 0.707*(u[c+i-1][c+i]); //positive slope part
+			v[c+i][c+i] = 0.707*(u[c+i-1][c+i]);
+
+			u[c-i][c+i] =    0.707*(u[c-i-1][c+i]); //negative slope part 
+			v[c-i][c+i] = -0.707*(u[c-i-1][c+i]);
+		}	
+
 
     if (n % SKIP == 0) {
 				for (int j = 0; j < NY; j++) {
